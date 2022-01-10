@@ -90,7 +90,36 @@ app.get('/', function (req, res) {
 
 app.put('/albums/:albumId', function (req, res) {
     const albumId = req.params.albumId;
-    const updatedAlbum = req.body;
+    const albumIndex = albumsData.findIndex(album => album.albumId === albumId);
+    if (albumIndex >= 0) {
+        const oldAlbum = albumsData[albumIndex];
+        const updatedAlbum = req.body;
+        let allowedUpdates = {};
+        //------Data validation----
+        //preventing id update
+        if (updatedAlbum.albumId && updatedAlbum.albumId !== oldAlbum.albumId) {
+            res.status(400).json({ msg: "Album id update is NOT allowed!" })
+        } else {
+            //preventing addition of new property
+            Object.keys(updatedAlbum).forEach(key => {
+                if (oldAlbum.hasOwnProperty(key)) {
+                    allowedUpdates[key] = updatedAlbum[key];
+                } else {
+                    res.status(400).json({ msg: "Adding new property is NOT allowed!" })
+                }
+            });
+            const newAlbum = { ...oldAlbum, ...allowedUpdates };
+            albumsData[albumIndex] = newAlbum;
+            res.status(200).json({
+                message: "Album is successfully updated!",
+                newAlbum : newAlbum
+            });
+        }
+    } else {
+        res.status(404).json({ msg: "Album not found" })
+        }
+  /*---alternate codes-----
+  const updatedAlbum = req.body;
     if (albumsData.find(album => album.albumId === albumId)) {
         albumsData.forEach(album => {
             if (album.albumId === albumId) {
@@ -106,8 +135,11 @@ app.put('/albums/:albumId', function (req, res) {
     } else {
         res.status(404).send({msg: "Album not found!"});
     }
+    */
+
     
 });
+
 
 app.delete("/albums/:albumId", (req, res) => {
     const albumId = req.params.albumId;
